@@ -746,6 +746,14 @@ class GroundingModel_QwenVL_WithHistory():
                 torch_dtype=dtype,
                 device_map="auto"
             ).eval()
+        else:
+            # Fallback for when the model path doesn't explicitly contain Qwen3 / Qwen2_5
+            print(f"Warning: model path '{model_path}' doesn't explicitly indicate qwen3 or qwen2.5. Defaulting to Qwen3 architecture.")
+            self.model = Qwen3VLForConditionalGeneration.from_pretrained(
+                model_path,
+                torch_dtype=dtype,
+                device_map="auto"
+            ).eval()
         
         self.processor = AutoProcessor.from_pretrained(model_path)
         # print(self.processor)
