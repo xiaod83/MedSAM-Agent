@@ -39,13 +39,7 @@ def parse_args():
         "--seg-checkpoint",
         type=str,
         required=True,
-        help="Segmentation checkpoint path (sam/medsam/imisnet)",
-    )
-    parser.add_argument(
-        "--seg-model",
-        type=str,
-        default="medsam",
-        help="Segmentation model type (sam/medsam/imisnet)",
+        help="MedSAM2 checkpoint path",
     )
     parser.add_argument("--n-clicks", type=int, default=5, help="Max clicks")
     parser.add_argument(
@@ -59,7 +53,7 @@ def parse_args():
         "--seg-config",
         type=str,
         default=None,
-        help="Segmentation config path (sam/medsam)",
+        help="MedSAM2 config path",
     )
     parser.add_argument(
         "--gpt-model",
@@ -115,7 +109,7 @@ def main():
     args = InferenceArgs()
     args.n_clicks = cli.n_clicks
     args.grounding_model = cli.grounding_model
-    args.seg_model = cli.seg_model
+    args.seg_model = "medsam"
     args.output_dir = cli.output_dir
     args.results_dir = cli.results_dir
     args.grounding_resize = None if cli.grounding_resize == 0 else cli.grounding_resize
@@ -138,17 +132,7 @@ def main():
         args.seg_config = cli.seg_config
 
     if not args.seg_config:
-        seg_model = args.seg_model.lower()
-        if seg_model == "sam":
-            args.seg_config = "configs/sam2.1/sam2.1_hiera_b+.yaml"
-        elif seg_model == "medsam":
-            args.seg_config = "configs/sam2.1/sam2.1_hiera_t.yaml"
-        elif seg_model == "imisnet":
-            args.seg_config = None
-        else:
-            raise ValueError(
-                f"Unknown seg_model '{args.seg_model}'. Please provide --seg-config explicitly."
-            )
+        args.seg_config = "configs/sam2.1/sam2.1_hiera_t.yaml"
     # Qwen settings (if used)
     if cli.grounding_model == "qwen":
         args.model = cli.model_path

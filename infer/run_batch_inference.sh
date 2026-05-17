@@ -2,39 +2,18 @@
 
 # Full model path (directory for local model, or "gpt" for API mode)
 MODEL_PATH="/path/to/your/model"
-# Segmentation model configuration (still required for GPT mode for segmentation)
-SEG_MODEL="medsam"  # Segmentation model type: sam, medsam, imisnet
 
 SAVE_INTERMEDIATE="true"  # Save intermediate_results (true/false)
 
 DATASETS=("LiverUS")
 SPLIT="test"
 
-# SAM/MedSAM model paths and config (used for all modes)
-# SAM2
-SAM2_CHECKPOINT="path/models--facebook--sam2.1-hiera-base-plus/sam2.1_hiera_base_plus.pt"
-SAM2_CONFIG="configs/sam2.1/sam2.1_hiera_b+.yaml"
-
 # MedSAM2
 MEDSAM2_CHECKPOINT="path/models--wanglab--MedSAM2/MedSAM2_latest.pt"
 MEDSAM2_CONFIG="configs/sam2.1/sam2.1_hiera_t.yaml"
 
-# IMISNet checkpoint path
-IMISNET_CHECKPOINT="path/models--1Junlong--IMIS-Net/IMISNet-B.pth"
-# === Data path configuration ===
-DATA_ROOT="your/data/root"
-
-# Select checkpoint/config based on SEG_MODEL
-if [ "$SEG_MODEL" = "medsam" ]; then
-    SEG_CHECKPOINT="$MEDSAM2_CHECKPOINT"
-    SEG_CONFIG="$MEDSAM2_CONFIG"
-elif [ "$SEG_MODEL" = "imisnet" ]; then
-    SEG_CHECKPOINT="$IMISNET_CHECKPOINT"
-    SEG_CONFIG=""  # Add config path if needed
-else
-    SEG_CHECKPOINT="$SAM2_CHECKPOINT"
-    SEG_CONFIG="$SAM2_CONFIG"
-fi
+SEG_CHECKPOINT="$MEDSAM2_CHECKPOINT"
+SEG_CONFIG="$MEDSAM2_CONFIG"
 
 # Other common configs
 N_CLICKS=5
@@ -189,7 +168,7 @@ for DATASET_NAME in "${DATASETS[@]}"; do
 
     MODEL_NAME=$(basename "$MODEL_PATH")
     OUTPUT_DIR="./intermediate_result/${MODEL_NAME}/${DATASET_NAME}"
-    RESULTS_DIR="./results/${MODEL_NAME}-${SEG_MODEL}/${DATASET_NAME}"
+    RESULTS_DIR="./results/${MODEL_NAME}-medsam/${DATASET_NAME}"
 
     mkdir -p "$OUTPUT_DIR" "$RESULTS_DIR"
 
@@ -243,7 +222,6 @@ for DATASET_NAME in "${DATASETS[@]}"; do
         "--data_root" "$DATA_ROOT"
         "--output_dir" "$OUTPUT_DIR"
         "--results_dir" "$RESULTS_DIR"
-        "--seg_model" "$SEG_MODEL"
         "--seg-checkpoint" "$SEG_CHECKPOINT"
         "--seg-config" "$SEG_CONFIG"
         "--use_fp16" "$USE_FP16"

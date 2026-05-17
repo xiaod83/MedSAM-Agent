@@ -165,7 +165,7 @@ class InferenceArgs:
         self.batch_size = 1                  # Batch inference size (only for supported models)
         
         # Segmentation model parameters
-        self.seg_model = "imisnet"              # Segmentation model type ("sam", "medsam", "imisnet")
+        self.seg_model = "medsam"              # Segmentation model type (MedSAM2 only)
         self.undo_radius = 3                # Click undo radius
         self.use_previous_mask = True       # Use previous mask as input
         
@@ -189,7 +189,7 @@ class InferenceArgs:
         # Grounding model path
         self.model = None                     # Grounding model path (if applicable)
         self.checkpoint = None              # Segmentation model checkpoint path (generic)
-        # Unified SAM/MedSAM config/checkpoint
+        # MedSAM2 config/checkpoint
         self.seg_checkpoint = None
         self.seg_config = None
         

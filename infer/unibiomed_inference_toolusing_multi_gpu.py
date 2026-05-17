@@ -338,14 +338,12 @@ def main():
                         help='Directory to save final aggregated results')
     parser.add_argument('--resize_resolution', type=int, default=512,
                         help='Input image resolution; set to 0 to disable resize')
-    parser.add_argument('--seg_model', type=str, default='imisnet',
-                        help='Segmentation model type (sam, medsam, imisnet)')
     parser.add_argument('--seg-checkpoint', type=str,
                         default='your/segmentation/checkpoint/path',
-                        help='Segmentation checkpoint path (sam/medsam/imisnet)')
+                        help='MedSAM2 checkpoint path')
     parser.add_argument('--seg-config', type=str,
                         default=None,
-                        help='Segmentation config path (sam/medsam)')
+                        help='MedSAM2 config path')
     parser.add_argument('--use_fp16', type=str, default='true',
                         help='Use FP16/BF16 mixed precision (true/false), can significantly speed up and reduce VRAM')
     parser.add_argument('--batch_size', type=int, default=1,
@@ -448,7 +446,7 @@ def main():
     args.resize_resolution = cmd_args.resize_resolution if cmd_args.resize_resolution > 0 else None
     
     # Set segmentation model parameters
-    args.seg_model = cmd_args.seg_model
+    args.seg_model = 'medsam'
     args.seg_checkpoint = cmd_args.seg_checkpoint
     args.seg_config = cmd_args.seg_config
     

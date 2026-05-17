@@ -37,12 +37,10 @@ pip install -r requirements.txt
 
 ## 📦Evaluation
 ### Model Download
-We support three segmentation backbones: MedSAM2, SAM, and IMISNet. Please download the checkpoints from:
+This repository is configured for MedSAM2 segmentation. Please download MedSAM2 from:
 - MedSAM2: [link](https://medsam2.github.io/)
-- SAM2.1: [link](https://huggingface.co/facebook/sam2.1-hiera-base-plus)
-- IMISNet: [link](https://github.com/uni-medical/IMIS-Bench)
 
-For SAM2.1 and IMISNet, please also download the dependency repositories and install them:
+Please also download the sam2 dependency repository and install it:
 ```bash
 cd third_party/
 git clone https://github.com/facebookresearch/sam2.git
@@ -63,44 +61,13 @@ python run_single_inference.py \
   --img-path infer/demo/BTCV-0-106_CT_abdomen.png \
   --target-description "right kidney in abdomen CT" \
   --model-path /path/to/mllm_model \
-  --seg-checkpoint /path/to/MedSAM2_latest.pt \
-  --seg-model medsam
+  --seg-checkpoint /path/to/MedSAM2_latest.pt
 ```
 
-- **Whole-dataset / multi-GPU:** Edit the variables at the top of [infer/run_batch_inference.sh](infer/run_batch_inference.sh): `MODEL_PATH` (local Qwen checkpoint or `gpt`), `SEG_MODEL` (`medsam`, `sam`, `imisnet`), segmentation checkpoints/configs, `DATA_ROOT`, `DATASETS`, `SPLIT`, GPU topology (`N_GPUS`, `PROCESSES_PER_GPU`).
+- **Whole-dataset / multi-GPU:** Edit the variables at the top of [infer/run_batch_inference.sh](infer/run_batch_inference.sh): `MODEL_PATH` (local Qwen checkpoint or `gpt`), `MEDSAM2_CHECKPOINT`, `MEDSAM2_CONFIG`, `DATA_ROOT`, `DATASETS`, `SPLIT`, GPU topology (`N_GPUS`, `PROCESSES_PER_GPU`).
 
 ```bash
 bash run_batch_inference.sh
-```
-
-## RL Training
-
-### Environment Setup
-Please follow the instructions in [RL-verl/README.md](RL-verl/README.md) to set up the Verl environment.
-
-Notice: the version of Sglang==0.5.4
-
-We support two segmentation backbones for RL training: MedSAM2 and IMISNet. 
-
-### API Server (segmentation)
-First, start the API server for segmentation model inference. You can choose either MedSAM2 or IMISNet by modifying the variables in [RL-verl/api_server/run_api.sh](RL-verl/api_server/run_api.sh):
-
-```bash
-bash RL-verl/api_server/run_api.sh
-```
-
-### RL Training with Verl
-- Script: [RL-verl/recipe/medsam_agent/run.sh](RL-verl/recipe/medsam_agent/run.sh)
-
-- You can modify the following variables in `run.sh`:
-  - `MODEL`: segmentation backbone, options: `medsam2` or `imisnet`
-  - `SAVE_CHECKPOINT_DIR`: root directory to save Verl training outputs
-  - `DATASET_TRAIN`: path to training dataset parquet file
-  - `DATASET_VAL`: path to validation dataset parquet file
-  - `REF_MODEL_PATH`: path to the base MLLM model (local checkpoint or `Qwen/Qwen3-VL-8B-Instruct`)
-
-```bash
-bash RL-verl/recipe/medsam_agent/run.sh
 ```
 
 
@@ -110,7 +77,6 @@ Greatly appreciate the tremendous effort for the following projects!
 - [Llama-Factory](https://github.com/hiyouga/LlamaFactory)
 - [SAM2](https://github.com/facebookresearch/sam2)
 - [MedSAM2](https://medsam2.github.io/)
-- [IMISNet](https://github.com/uni-medical/IMIS-Bench)
 - [UniBioMed](https://github.com/Luffy03/UniBiomed)
 - [BioMedParse](https://github.com/microsoft/BiomedParse)
 - [SegAgent](https://github.com/aim-uofa/SegAgent)
