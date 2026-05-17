@@ -170,14 +170,14 @@ class InferenceArgs:
         self.use_previous_mask = True       # Use previous mask as input
         
         # Grounding model parameters
-        self.grounding_model = "qwen"  # grounding model type
+        self.grounding_model = "gemma"  # grounding model type
         self.use_mask_module = True         # Use mask module
         
         # Analysis and logging parameters
         self.save_masks_history = False     # Save per-round mask history (will enlarge JSON file)
         self.compute_per_round_iou = True   # Compute per-round IoU in real time (requires GT mask)
         
-        # History parameters (only valid when using qwen)
+        # History parameters (only valid when using gemma)
         self.max_history_length = 5        # Maximum history length
         self.use_history = True             # Use history
         self.reset_history_per_image = False # Reset history per image
@@ -211,10 +211,10 @@ class SingleImageInference:
         
         # Initialize if using a model that supports history
         grounding_model_type = getattr(args, 'grounding_model', '')
-        if 'qwen' in grounding_model_type:
+        if 'gemma' in grounding_model_type:
             # Check for start_new_session method (confirm history support)
             if hasattr(self.grounding_model, 'start_new_session'):
-                print("Detected Qwen model, enabling conversation history")
+                print("Detected Gemma model, enabling conversation history")
                 self.use_history = True
             else:
                 print(f"Warning: grounding_model set to {grounding_model_type} but model does not support history")

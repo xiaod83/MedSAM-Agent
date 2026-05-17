@@ -33,7 +33,7 @@ def parse_args():
         "--model-path",
         type=str,
         required=True,
-        help="Local Qwen checkpoint dir (used when grounding-model=qwen)",
+        help="Local Gemma checkpoint dir (used when grounding-model=gemma)",
     )
     parser.add_argument(
         "--seg-checkpoint",
@@ -45,8 +45,8 @@ def parse_args():
     parser.add_argument(
         "--grounding-model",
         type=str,
-        default="qwen",
-        choices=["qwen"],
+        default="gemma",
+        choices=["gemma"],
         help="Grounding model type",
     )
     parser.add_argument(
@@ -108,7 +108,7 @@ def main():
 
     if not args.seg_config:
         args.seg_config = "configs/sam2.1/sam2.1_hiera_t.yaml"
-    # Qwen settings
+    # Gemma settings
     args.model = cli.model_path
 
     # Dataset name is used by Clicker for saving

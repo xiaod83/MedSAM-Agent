@@ -302,8 +302,8 @@ def main():
     parser.add_argument('--split', type=str, default='test',
                         help='Dataset split (train, test, val)')
     parser.add_argument('--model_path', type=str, 
-                        default='Qwen3/Qwen3-VL-8B-Instruct',
-                        help='Grounding model path or model type (path or qwen)')
+                        default='google/gemma-4-E4B-it',
+                        help='Grounding model path or model type (path or gemma)')
     parser.add_argument('--save_intermediate', type=str, default='false',
                         help='Whether to save intermediate results (true/false)')
     parser.add_argument('--n_clicks', type=int, default=3,
@@ -372,7 +372,7 @@ def main():
     # Otherwise treat it as grounding_model type
     if '/' in cmd_args.model_path or os.path.exists(cmd_args.model_path):
         args.model = cmd_args.model_path
-        args.grounding_model = "qwen"  # Default type when using checkpoint
+        args.grounding_model = "gemma"  # Default type when using checkpoint
         print(f"Using model checkpoint: {cmd_args.model_path}")
     else:
         args.grounding_model = cmd_args.model_path
