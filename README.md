@@ -64,7 +64,7 @@ python run_single_inference.py \
   --seg-checkpoint /path/to/MedSAM2_latest.pt
 ```
 
-- **Whole-dataset / multi-GPU:** Edit the variables at the top of [infer/run_batch_inference.sh](infer/run_batch_inference.sh): `MODEL_PATH` (local Qwen checkpoint or `gpt`), `MEDSAM2_CHECKPOINT`, `MEDSAM2_CONFIG`, `DATA_ROOT`, `DATASETS`, `SPLIT`, GPU topology (`N_GPUS`, `PROCESSES_PER_GPU`).
+- **Whole-dataset / multi-GPU:** Edit the variables at the top of [infer/run_batch_inference.sh](infer/run_batch_inference.sh): `MODEL_PATH` (local Qwen checkpoint), `MEDSAM2_CHECKPOINT`, `MEDSAM2_CONFIG`, `DATA_ROOT`, `DATASETS`, `SPLIT`, GPU topology (`N_GPUS`, `PROCESSES_PER_GPU`).
 
 ```bash
 bash run_batch_inference.sh

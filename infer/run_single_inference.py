@@ -46,7 +46,7 @@ def parse_args():
         "--grounding-model",
         type=str,
         default="qwen",
-        choices=["gpt", "qwen"],
+        choices=["qwen"],
         help="Grounding model type",
     )
     parser.add_argument(
@@ -54,24 +54,6 @@ def parse_args():
         type=str,
         default=None,
         help="MedSAM2 config path",
-    )
-    parser.add_argument(
-        "--gpt-model",
-        type=str,
-        default="gpt-4o",
-        help="OpenAI model name (when grounding-model=gpt)",
-    )
-    parser.add_argument(
-        "--gpt-api-key",
-        type=str,
-        default=os.environ.get("OPENAI_API_KEY", None),
-        help="OpenAI API key (optional if set in env)",
-    )
-    parser.add_argument(
-        "--gpt-api-base",
-        type=str,
-        default=os.environ.get("OPENAI_API_BASE", None),
-        help="OpenAI API base URL (optional)",
     )
     parser.add_argument(
         "--output-dir",
@@ -118,13 +100,6 @@ def main():
     args.max_history_length = cli.max_history_length
     args.reset_history_per_image = True
 
-    # GPT settings (if used)
-    args.gpt_model = cli.gpt_model
-    if cli.gpt_api_key:
-        args.gpt_api_key = cli.gpt_api_key
-    if cli.gpt_api_base:
-        args.gpt_api_base = cli.gpt_api_base
-
     # Segmentation settings
     if cli.seg_checkpoint:
         args.seg_checkpoint = cli.seg_checkpoint
@@ -133,9 +108,8 @@ def main():
 
     if not args.seg_config:
         args.seg_config = "configs/sam2.1/sam2.1_hiera_t.yaml"
-    # Qwen settings (if used)
-    if cli.grounding_model == "qwen":
-        args.model = cli.model_path
+    # Qwen settings
+    args.model = cli.model_path
 
     # Dataset name is used by Clicker for saving
     args.dataset_name = "demo"

@@ -53,36 +53,22 @@ def worker_process(rank, n_gpus, processes_per_gpu, annotations_chunk, args, ret
         return_dict: Shared dictionary for returning results
     """
     try:
-        # Detect GPT mode
-        is_gpt_mode = hasattr(args, 'gpt_model') or (isinstance(args.grounding_model, str) and 'gpt' in args.grounding_model.lower())
-        
-        # Set GPU only in non-GPT mode
-        if not is_gpt_mode:
-            setup_process_gpu(rank, n_gpus, processes_per_gpu)
-            gpu_id = rank // processes_per_gpu
-            process_id_on_gpu = rank % processes_per_gpu
-            print(f"[Process {rank} @ GPU {gpu_id}] Process started, handling {len(annotations_chunk)} samples")
-            print(f"[Process {rank} @ GPU {gpu_id}] Current CUDA device: {torch.cuda.current_device()}")
-            print(f"[Process {rank} @ GPU {gpu_id}] Available GPU count: {torch.cuda.device_count()}")
-        else:
-            print(f"[Process {rank}] GPT mode process started, handling {len(annotations_chunk)} samples")
-            gpu_id = None  # GPT mode does not use GPU
-            process_id_on_gpu = 0
+        setup_process_gpu(rank, n_gpus, processes_per_gpu)
+        gpu_id = rank // processes_per_gpu
+        process_id_on_gpu = rank % processes_per_gpu
+        print(f"[Process {rank} @ GPU {gpu_id}] Process started, handling {len(annotations_chunk)} samples")
+        print(f"[Process {rank} @ GPU {gpu_id}] Current CUDA device: {torch.cuda.current_device()}")
+        print(f"[Process {rank} @ GPU {gpu_id}] Available GPU count: {torch.cuda.device_count()}")
         
         # Deep copy args to create per-process config
         args_copy = deepcopy(args)
-        # Inform model loader of the desired GPU index for this process (not needed in GPT mode)
-        if not is_gpt_mode:
-            args_copy.device = gpu_id
+        args_copy.device = gpu_id
         
         # Load models on the current GPU
         from models.model_loader import load_model
         segmentation_model, grounding_model = load_model(args_copy)
         
-        if is_gpt_mode:
-            print(f"[Process {rank}] GPT model loaded")
-        else:
-            print(f"[Process {rank} @ GPU {gpu_id}] Model loaded")
+        print(f"[Process {rank} @ GPU {gpu_id}] Model loaded")
         
         # Create inferencer
         inferencer = SingleImageInference(grounding_model, segmentation_model, args_copy)
@@ -104,7 +90,7 @@ def worker_process(rank, n_gpus, processes_per_gpu, annotations_chunk, args, ret
             return os.path.join(base_output_dir, 'samples', folder_name)
 
         # Process assigned data
-        desc = f"Process {rank} (GPT)" if is_gpt_mode else f"Process {rank} @ GPU {gpu_id}"
+        desc = f"Process {rank} @ GPU {gpu_id}"
         for i, each_item in enumerate(tqdm(annotations_chunk, 
                                            desc=desc, 
                                            position=rank)):
@@ -118,13 +104,13 @@ def worker_process(rank, n_gpus, processes_per_gpu, annotations_chunk, args, ret
                 
                 # Check file existence
                 if not os.path.exists(image_file):
-                    log_prefix = f"[Process {rank}]" if is_gpt_mode else f"[GPU {rank}]"
+                    log_prefix = f"[GPU {rank}]"
                     print(f"{log_prefix} Error: Image file not found: {image_file}")
                     failed_count += 1
                     continue
                     
                 if not os.path.exists(mask_path):
-                    log_prefix = f"[Process {rank}]" if is_gpt_mode else f"[GPU {rank}]"
+                    log_prefix = f"[GPU {rank}]"
                     print(f"{log_prefix} Error: Mask file not found: {mask_path}")
                     failed_count += 1
                     continue
@@ -147,7 +133,7 @@ def worker_process(rank, n_gpus, processes_per_gpu, annotations_chunk, args, ret
                         if not os.path.exists(original_path):
                             image.save(original_path)
                     except Exception as e:
-                        log_prefix = f"[Process {rank}]" if is_gpt_mode else f"[GPU {rank}]"
+                        log_prefix = f"[GPU {rank}]"
                         print(f"{log_prefix} Warning: Failed to save original image: {e}")
 
                     # Save GT mask and visualization
@@ -168,7 +154,7 @@ def worker_process(rank, n_gpus, processes_per_gpu, annotations_chunk, args, ret
                         if not os.path.exists(gt_vis_path):
                             cv2.imwrite(gt_vis_path, cv2.cvtColor(gt_vis, cv2.COLOR_RGB2BGR))
                     except Exception as e:
-                        log_prefix = f"[Process {rank}]" if is_gpt_mode else f"[GPU {rank}]"
+                        log_prefix = f"[GPU {rank}]"
                         print(f"{log_prefix} Warning: Failed to save GT result: {e}")
                 else:
                     args_copy.sample_output_dir = None
@@ -190,7 +176,7 @@ def worker_process(rank, n_gpus, processes_per_gpu, annotations_chunk, args, ret
                         record_path = inferencer.save_inference_record(inference_record)
                     final_mask = final_mask[0]
                 else:
-                    log_prefix = f"[Process {rank}]" if is_gpt_mode else f"[GPU {rank}]"
+                    log_prefix = f"[GPU {rank}]"
                     print(f"{log_prefix} Error: Inference failed, no valid mask generated")
                     failed_count += 1
                     continue
@@ -218,7 +204,7 @@ def worker_process(rank, n_gpus, processes_per_gpu, annotations_chunk, args, ret
                         if gt_mask_binary.sum() > 0:
                             dice, iou = get_metrics(pred_mask_binary, gt_mask_binary)
                             img_name = os.path.basename(image_file)
-                            log_prefix = f"[Process {rank}]" if is_gpt_mode else f"[GPU {rank}]"
+                            log_prefix = f"[GPU {rank}]"
                             print(f"{log_prefix} {img_name} - Dice: {dice:.4f}, IoU: {iou:.4f}")
                             
                             # Get per-round IoU directly from inference_record (real-time computed)
@@ -235,19 +221,19 @@ def worker_process(rank, n_gpus, processes_per_gpu, annotations_chunk, args, ret
                                 'per_round_metrics': per_round_metrics
                             }
                     except Exception as metric_error:
-                        log_prefix = f"[Process {rank}]" if is_gpt_mode else f"[GPU {rank}]"
+                        log_prefix = f"[GPU {rank}]"
                         print(f"{log_prefix} Warning: Failed to compute metrics: {metric_error}")
                     
                     processed_count += 1
                     
                 except Exception as mask_save_error:
-                    log_prefix = f"[Process {rank}]" if is_gpt_mode else f"[GPU {rank}]"
+                    log_prefix = f"[GPU {rank}]"
                     print(f"{log_prefix} Error: Failed to save mask: {mask_save_error}")
                     failed_count += 1
                     continue
                     
             except Exception as e:
-                log_prefix = f"[Process {rank}]" if is_gpt_mode else f"[GPU {rank}]"
+                log_prefix = f"[GPU {rank}]"
                 print(f"{log_prefix} Error processing sample: {e}")
                 import traceback
                 traceback.print_exc()
@@ -263,7 +249,7 @@ def worker_process(rank, n_gpus, processes_per_gpu, annotations_chunk, args, ret
         }
         return_dict[rank] = local_results
         
-        log_prefix = f"[Process {rank}]" if is_gpt_mode else f"[Process {rank} @ GPU {gpu_id}]"
+        log_prefix = f"[Process {rank} @ GPU {gpu_id}]"
         print(f"{log_prefix} Process completed! Success: {processed_count}, Failed: {failed_count}")
         
         # Clean up resources
@@ -272,11 +258,10 @@ def worker_process(rank, n_gpus, processes_per_gpu, annotations_chunk, args, ret
         if hasattr(segmentation_model, 'release_resources'):
             segmentation_model.release_resources()
         
-        if not is_gpt_mode:
-            torch.cuda.empty_cache()
+        torch.cuda.empty_cache()
         
     except Exception as e:
-        log_prefix = f"[Process {rank}]" if is_gpt_mode else f"[Process {rank} @ GPU {gpu_id}]"
+        log_prefix = f"[Process {rank} @ GPU {gpu_id}]"
         print(f"{log_prefix} Process terminated with exception: {e}")
         import traceback
         traceback.print_exc()
@@ -318,7 +303,7 @@ def main():
                         help='Dataset split (train, test, val)')
     parser.add_argument('--model_path', type=str, 
                         default='Qwen3/Qwen3-VL-8B-Instruct',
-                        help='Grounding model path or model type (path or qwen/gpt, etc.)')
+                        help='Grounding model path or model type (path or qwen)')
     parser.add_argument('--save_intermediate', type=str, default='false',
                         help='Whether to save intermediate results (true/false)')
     parser.add_argument('--n_clicks', type=int, default=3,
@@ -348,58 +333,36 @@ def main():
                         help='Use FP16/BF16 mixed precision (true/false), can significantly speed up and reduce VRAM')
     parser.add_argument('--batch_size', type=int, default=1,
                         help='Batch inference size (currently only batch_size=1; future versions will support larger batch)')
-    # Optional GPT parameters (used in GPT mode)
-    parser.add_argument('--gpt_api_key', type=str, default=None,
-                        help='GPT API Key; if not provided, use environment variable OPENAI_API_KEY')
-    parser.add_argument('--gpt_api_base', type=str, default=None,
-                        help='GPT API Base URL, e.g., https://api.openai.com/v1 or other proxy')
-    parser.add_argument('--gpt_model', type=str, default='gpt-4o',
-                        help='GPT model name, e.g., gpt-4o, gpt-4-turbo, gpt-4o-mini')
-    
     cmd_args = parser.parse_args()
     
     print("=" * 80)
     print("Multi-GPU multi-process inference script")
     print("=" * 80)
     
-    # Pre-detect mode (based on model_path)
-    is_gpt_mode = cmd_args.model_path and ('gpt' in cmd_args.model_path.lower())
-    
-    # Check CUDA availability (can be skipped in GPT mode)
-    if not is_gpt_mode:
-        if not torch.cuda.is_available():
-            print("Error: CUDA not available, cannot use GPU")
-            return
-        
-        available_gpus = torch.cuda.device_count()
-        print(f"\nDetected {available_gpus} available GPUs")
-        for i in range(available_gpus):
-            print(f"  GPU {i}: {torch.cuda.get_device_name(i)}")
-    else:
-        print(f"\n✨ GPT API mode - using serial calls, no GPU needed")
-        available_gpus = 0  # GPT mode does not need GPU
+    if not torch.cuda.is_available():
+        print("Error: CUDA not available, cannot use GPU")
+        return
+
+    available_gpus = torch.cuda.device_count()
+    print(f"\nDetected {available_gpus} available GPUs")
+    for i in range(available_gpus):
+        print(f"  GPU {i}: {torch.cuda.get_device_name(i)}")
     
     # Configure with command-line arguments
     DATASET_NAME = cmd_args.dataset_name
     SPLIT = cmd_args.split
     
-    if not is_gpt_mode:
-        N_GPUS = min(cmd_args.n_gpus, available_gpus)  # GPUs to use, not exceeding available count
-        PROCESSES_PER_GPU = cmd_args.processes_per_gpu  # Processes per GPU
-        TOTAL_PROCESSES = N_GPUS * PROCESSES_PER_GPU  # Total process count
-        
-        if N_GPUS < 1:
-            print("Error: No available GPU")
-            return
-        
-        print(f"\nWill use {N_GPUS} GPUs for inference")
-        print(f"Processes per GPU: {PROCESSES_PER_GPU}")
-        print(f"Total parallel processes: {TOTAL_PROCESSES}")
-    else:
-        # GPT mode: serial execution
-        N_GPUS = 1
-        PROCESSES_PER_GPU = 1
-        TOTAL_PROCESSES = 1
+    N_GPUS = min(cmd_args.n_gpus, available_gpus)  # GPUs to use, not exceeding available count
+    PROCESSES_PER_GPU = cmd_args.processes_per_gpu  # Processes per GPU
+    TOTAL_PROCESSES = N_GPUS * PROCESSES_PER_GPU  # Total process count
+
+    if N_GPUS < 1:
+        print("Error: No available GPU")
+        return
+
+    print(f"\nWill use {N_GPUS} GPUs for inference")
+    print(f"Processes per GPU: {PROCESSES_PER_GPU}")
+    print(f"Total parallel processes: {TOTAL_PROCESSES}")
     
     # Create configuration
     args = InferenceArgs()
@@ -415,13 +378,6 @@ def main():
         args.grounding_model = cmd_args.model_path
         print(f"Using model type: {cmd_args.model_path}")
 
-    # Pass GPT config to args (effective only when model type is gpt)
-    is_gpt_mode = isinstance(args.grounding_model, str) and 'gpt' in args.grounding_model.lower()
-    if is_gpt_mode:
-        args.gpt_api_key = cmd_args.gpt_api_key
-        args.gpt_api_base = cmd_args.gpt_api_base
-        args.gpt_model = cmd_args.gpt_model
-    
     args.max_history_length = 5
     args.use_history = True
     args.reset_history_per_image = True
@@ -464,20 +420,9 @@ def main():
     print(f"  Split: {SPLIT}")
     print(f"  Data folder: {args.val_folder}")
     
-    # Detect GPT mode (before configuring GPUs)
-    is_gpt_mode = isinstance(args.grounding_model, str) and 'gpt' in args.grounding_model.lower()
-    
-    if is_gpt_mode:
-        print(f"\n✨ GPT mode detected, using serial API calls")
-        print("  - No GPU multi-processing")
-        print("  - Call model via OpenAI API")
-        N_GPUS = 1
-        PROCESSES_PER_GPU = 1
-        TOTAL_PROCESSES = 1
-    else:
-        print(f"  GPU count: {N_GPUS}")
-        print(f"  Processes per GPU: {PROCESSES_PER_GPU}")
-        print(f"  Total parallel processes: {TOTAL_PROCESSES}")
+    print(f"  GPU count: {N_GPUS}")
+    print(f"  Processes per GPU: {PROCESSES_PER_GPU}")
+    print(f"  Total parallel processes: {TOTAL_PROCESSES}")
     
     print(f"  Grounding model: {args.grounding_model}")
     print(f"  Model path: {getattr(args, 'model', 'default')}")

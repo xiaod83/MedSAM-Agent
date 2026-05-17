@@ -170,7 +170,7 @@ class InferenceArgs:
         self.use_previous_mask = True       # Use previous mask as input
         
         # Grounding model parameters
-        self.grounding_model = "gpt"  # grounding model type (options: "qwen", "gpt")
+        self.grounding_model = "qwen"  # grounding model type
         self.use_mask_module = True         # Use mask module
         
         # Analysis and logging parameters
@@ -211,11 +211,10 @@ class SingleImageInference:
         
         # Initialize if using a model that supports history
         grounding_model_type = getattr(args, 'grounding_model', '')
-        if 'qwen' in grounding_model_type or 'gpt' in grounding_model_type.lower():
+        if 'qwen' in grounding_model_type:
             # Check for start_new_session method (confirm history support)
             if hasattr(self.grounding_model, 'start_new_session'):
-                model_name = 'GPT' if 'gpt' in grounding_model_type.lower() else 'Qwen'
-                print(f"Detected {model_name} model, enabling conversation history")
+                print("Detected Qwen model, enabling conversation history")
                 self.use_history = True
             else:
                 print(f"Warning: grounding_model set to {grounding_model_type} but model does not support history")

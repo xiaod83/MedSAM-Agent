@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Full model path (directory for local model, or "gpt" for API mode)
+# Full model path (directory for local model)
 MODEL_PATH="/path/to/your/model"
 
 SAVE_INTERMEDIATE="true"  # Save intermediate_results (true/false)
@@ -151,8 +151,8 @@ TOTAL_START_TIME=$(date +%s)
 # Set Python environment variables once
 export PYTHONPATH="${PYTHONPATH}:$(pwd)"
 export VIS_DIR="$(pwd)"
-# Validate model path (skip for GPT mode)
-if [ "$MODEL_PATH" != "gpt" ] && [ ! -d "$MODEL_PATH" ]; then
+# Validate model path
+if [ ! -d "$MODEL_PATH" ]; then
     echo "Error: Model path does not exist: $MODEL_PATH"
     exit 1
 fi
